@@ -98,6 +98,14 @@ func findLeastDeviation(numbers []float64) float64 {
 	}
 }
 
+func simulateMeasuring(measurements []*Measurement, shrinkage float64) []*Measurement {
+	var simulatedMeasurements []*Measurement
+	for _, measurement := range measurements {
+		simulatedMeasurements = append(simulatedMeasurements, newMeasurement(measurement.expected, measurement.expected*shrinkage))
+	}
+	return simulatedMeasurements
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Println("Usage: ", os.Args[0], " <file>")
@@ -129,5 +137,12 @@ func main() {
 	}
 	leastDeviatingAdjustment := findLeastDeviation(adjustments)
 
-	fmt.Printf("Shrinkage: %.3f, Adjustment: %.3f\n", leastDeviatingShrinkage, leastDeviatingAdjustment)
+	simulatedMeasurements := simulateMeasuring(measurements, leastDeviatingShrinkage)
+	var simulatedAdjustments []float64
+	for _, measurement := range simulatedMeasurements {
+		simulatedAdjustments = append(simulatedAdjustments, measurement.adjustment)
+	}
+	leastDeviatingSimulatedAdjustment := findLeastDeviation(simulatedAdjustments)
+
+	fmt.Printf("Shrinkage: %.4f, Adjustment: %.4f, Simulated adjustment %.4f\n", leastDeviatingShrinkage, leastDeviatingAdjustment, leastDeviatingSimulatedAdjustment)
 }
