@@ -1,0 +1,49 @@
+name: CI
+
+# Pull requests only. Pushing a branch on its own runs nothing - the suite is
+# for reviewing proposed changes, not for every intermediate commit.
+#
+# ready_for_review is not one of the default activity types, and without it a
+# pull request opened as a draft would never get a run: its opened and
+# synchronize events are skipped as drafts, and marking it ready would fire
+# nothing to replace them.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  # Allows re-running the suite by hand from the Actions tab.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to the same branch makes the in-flight run pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # No setup-go: 'make prepare' installs the toolchain the Makefile pins, so CI
+  # and a developer machine cannot drift apart.
+  checks:
+    name: Tests and lint
+    runs-on: ubuntu-latest
+    # Drafts are work in progress; a manual dispatch has no pull request
+    # attached, so it must not be filtered out by this.
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Cache the local toolchain
+        uses: actions/cache@v6
+        with:
+          path: .go
+          key: go-${{ runner.os }}-${{ hashFiles('Makefile', 'go.mod') }}
+
+      - name: Prepare workspace
+        run: make prepare
+
+      - name: Run tests
+        run: make test
+
+      - name: Run golangci-lint
+        run: make lint

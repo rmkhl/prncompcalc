@@ -1,0 +1,50 @@
+name: Release tag
+
+# internal/version/version.go is the source of truth for the version; this workflow
+# creates the matching git tag once a change has actually landed on master.
+#
+# Tagging from a PR branch instead would put the tag on a commit that may never
+# merge -- a rejected or force-pushed branch would leave a tag pointing at
+# nothing, and pushed tags are unpleasant to retract.
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+# Two merges in quick succession must not race to create the same tag.
+concurrency:
+  group: release-tag
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    name: Tag the released version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Existing tags are needed to tell a new version from one already cut.
+          fetch-depth: 0
+
+      - name: Create the tag if the version is new
+        run: |
+          set -euo pipefail
+          version=$(sed -nE 's/^const Version = "(.*)"$/\1/p' internal/version/version.go)
+          if [ -z "$version" ]; then
+            echo "::error::Could not read the version from internal/version/version.go."
+            exit 1
+          fi
+
+          tag="v$version"
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            echo "$tag already exists; this merge did not bump the version."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$tag" -m "prncompcalc $tag"
+          git push origin "$tag"
+          echo "Created $tag at $(git rev-parse --short HEAD)."
