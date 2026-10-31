@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>prncompcalc</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div>
+      <h1>prncompcalc</h1>
+      <p data-i18n="tagline"></p>
+    </div>
+    <div class="language" role="group" aria-label="Kieli / Language">
+      <button type="button" data-language="fi">Suomi</button>
+      <button type="button" data-language="en">English</button>
+    </div>
+  </header>
+
+  <main>
+    <section aria-labelledby="measurements-heading">
+      <h2 id="measurements-heading" data-i18n="measurementsHeading"></h2>
+      <p class="hint" data-i18n="measurementsHint"></p>
+      <table id="measurements">
+        <thead>
+          <tr>
+            <th scope="col" class="row-number">#</th>
+            <th scope="col" data-i18n="columnExpected"></th>
+            <th scope="col" data-i18n="columnActual"></th>
+            <th scope="col" data-i18n="columnFeature"></th>
+            <th scope="col"><span class="visually-hidden" data-i18n="columnRemove"></span></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <ul id="row-issues" class="messages"></ul>
+      <div class="actions">
+        <button type="button" id="add-row" data-i18n="addRow"></button>
+        <button type="button" id="load-example" data-i18n="loadExample"></button>
+        <button type="button" id="clear" data-i18n="clear"></button>
+      </div>
+    </section>
+
+    <section aria-labelledby="results-heading" aria-live="polite">
+      <h2 id="results-heading" data-i18n="resultsHeading"></h2>
+      <p id="status" class="hint"></p>
+      <div id="results" hidden>
+        <dl class="slicer-values">
+          <div><dt>Shrinkage (XY)</dt><dd id="shrinkage"></dd></div>
+          <div><dt>X-Y contour compensation</dt><dd id="contour"></dd></div>
+          <div><dt>X-Y hole compensation</dt><dd id="hole"></dd></div>
+        </dl>
+        <ul id="warnings" class="messages"></ul>
+        <details>
+          <summary data-i18n="detailsHeading"></summary>
+          <dl id="details" class="details"></dl>
+        </details>
+        <p class="hint" data-i18n="confirmPrint"></p>
+      </div>
+    </section>
+
+    <section aria-labelledby="tips-heading">
+      <h2 id="tips-heading" data-i18n="tipsHeading"></h2>
+      <ul class="tips">
+        <li data-i18n="tipRange"></li>
+        <li data-i18n="tipSizes"></li>
+        <li data-i18n="tipFirstLayer"></li>
+        <li data-i18n="tipHoles"></li>
+        <li data-i18n="tipAxes"></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <span data-i18n="privacy"></span>
+    <span>prncompcalc <span id="version"></span>, GPL-3.0, <a href="https://github.com/rmkhl/prncompcalc" data-i18n="sourceCode"></a></span>
+  </footer>
+
+  <script src="wasm_exec.js"></script>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -36,9 +36,9 @@ func assertClose(t *testing.T, name string, got, want float64) {
 	}
 }
 
-func hasWarning(report *Report, text string) bool {
+func hasWarning(report *Report, code Code) bool {
 	for _, warning := range report.Warnings {
-		if strings.Contains(warning, text) {
+		if warning.Code == code {
 			return true
 		}
 	}
@@ -182,18 +182,18 @@ func TestCalculateWarnsAboutNarrowRange(t *testing.T) {
 		{Expected: 21, Actual: 20.82},
 		{Expected: 21, Actual: 20.83},
 	})
-	if !hasWarning(report, "uncertain") {
-		t.Errorf("warnings = %q", report.Warnings)
+	if !hasWarning(report, CodeUncertainShrink) {
+		t.Errorf("warnings = %v", report.Warnings)
 	}
-	if !hasWarning(report, "2 sizes") {
-		t.Errorf("warnings = %q", report.Warnings)
+	if !hasWarning(report, CodeFewSizes) {
+		t.Errorf("warnings = %v", report.Warnings)
 	}
 }
 
 func TestCalculateWarnsAboutFewPoints(t *testing.T) {
 	report := mustCalculate(t, exactMeasurements(0.99, 0, 20, 40, 60))
-	if !hasWarning(report, "only 3 points") {
-		t.Errorf("warnings = %q", report.Warnings)
+	if !hasWarning(report, CodeFewPoints) {
+		t.Errorf("warnings = %v", report.Warnings)
 	}
 }
 
@@ -204,15 +204,15 @@ func TestCalculateWarnsWhenOffsetIsNoise(t *testing.T) {
 		{Expected: 100, Actual: 99.01},
 		{Expected: 100, Actual: 98.99},
 	})
-	if !hasWarning(report, "told apart from zero") {
-		t.Errorf("warnings = %q", report.Warnings)
+	if !hasWarning(report, CodeOffsetIsNoise) {
+		t.Errorf("warnings = %v", report.Warnings)
 	}
 }
 
 func TestCalculateCleanWideRangeHasNoWarnings(t *testing.T) {
 	report := mustCalculate(t, exactMeasurements(0.995, -0.1, 20, 20, 60, 60, 100, 100))
 	if len(report.Warnings) != 0 {
-		t.Errorf("warnings = %q", report.Warnings)
+		t.Errorf("warnings = %v", report.Warnings)
 	}
 }
 
@@ -265,4 +265,33 @@ func TestCalculateFitsEachAxis(t *testing.T) {
 	}
 	assertClose(t, "x slope", report.Axes[0].Line.Slope, 0.99)
 	assertClose(t, "y slope", report.Axes[1].Line.Slope, 0.995)
+}
+
+func TestEveryCodeHasEnglishText(t *testing.T) {
+	for _, code := range []Code{
+		CodeFieldCount, CodeNotANumber, CodeNotPositive, CodeUnknownLabel,
+		CodeNoMeasurements, CodeNoOuter, CodeTooFewToFit, CodeOneSize,
+		CodeFewPoints, CodeFewSizes, CodeUncertainShrink, CodeOffsetIsNoise,
+	} {
+		if englishText[code] == "" {
+			t.Errorf("no text for %s", code)
+		}
+	}
+}
+
+func TestNewMeasurement(t *testing.T) {
+	got, err := NewMeasurement(4, "20", "19,8", "HOLE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Line != 4 || got.Feature != FeatureHole {
+		t.Errorf("got %+v", got)
+	}
+	assertClose(t, "actual", got.Actual, 19.8)
+
+	_, err = NewMeasurement(1, "abc", "1", "")
+	var message Message
+	if !errors.As(err, &message) || message.Code != CodeNotANumber {
+		t.Errorf("err = %v, want a %s message", err, CodeNotANumber)
+	}
 }

@@ -24,8 +24,9 @@ go.work.sum
 # env file
 .env
 
-# Built binaries
+# Built binaries and web page
 bin
+dist
 
 # Project-local Go toolchain, module cache and golangci-lint
 .go
