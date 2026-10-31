@@ -43,19 +43,19 @@ ignored.
 ```console
 $ bin/prncompcalc measurements.txt
 Points used:   6, 3 sizes from 20.00 to 100.00 mm
-Shrinkage:     0.99431 (95% range 0.99373 to 0.99489)
-Model scale:   1.00572
+Shrinkage:     99.431% (95% range 99.373% to 99.489%)
+Model scale:   100.572%
 Offset:        -0.0721 mm (95% range -0.1115 to -0.0326 mm)
 Scatter:       0.0166 mm
 Contour comp:  +0.0360 mm per side
 Hole comp:     +0.1166 mm per side (1 measured)
-Axis X:        shrinkage 0.99437, offset -0.0892 mm
-Axis Y:        shrinkage 0.99425, offset -0.0550 mm
+Axis X:        shrinkage 99.437%, offset -0.0892 mm
+Axis Y:        shrinkage 99.425%, offset -0.0550 mm
 ```
 
 | Value | Meaning |
 | ----- | ------- |
-| Shrinkage | Slope of the fit: printed size as a ratio of model size, as slicers take it |
+| Shrinkage | Slope of the fit: printed size as a percentage of model size, as OrcaSlicer takes it |
 | Model scale | What to scale a model by to cancel the shrinkage |
 | Offset | Constant error of the outer dimension, across both sides |
 | Scatter | Typical distance of a measurement from the fit |
