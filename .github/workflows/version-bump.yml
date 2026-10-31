@@ -1,0 +1,74 @@
+name: Version bump
+
+# internal/version/version.go is the source of truth for the release tag, so a PR that
+# changes behaviour without bumping it would land untagged. The 'no-release'
+# label is the escape hatch for changes that ship nothing runnable.
+#
+# This lives apart from ci.yml because of the label triggers below. The usual
+# way to reach the label is to open a PR, see this check go red, and then add
+# it -- so the check has to re-run when the labels change. Putting these
+# triggers on ci.yml instead would re-run the whole test and lint suite on
+# every label change of any kind, and its cancel-in-progress concurrency would
+# abort an in-flight run to do it. This job takes about seven seconds.
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      # Adding or removing 'no-release' has to re-evaluate the check. GitHub
+      # replays the original event payload on a manual re-run, so without
+      # these a label added after the fact would never be seen.
+      - labeled
+      - unlabeled
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  version-bump:
+    name: Version bump
+    runs-on: ubuntu-latest
+    # Drafts are work in progress.
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Comparing against the base branch needs its history, which the
+          # default shallow clone does not fetch.
+          fetch-depth: 0
+
+      - name: Check the version constant was bumped
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'no-release') }}
+        run: |
+          set -euo pipefail
+          read_version() { sed -nE 's/^const Version = "(.*)"$/\1/p' "$1"; }
+
+          new=$(read_version internal/version/version.go)
+          if [ -z "$new" ]; then
+            echo "::error::Could not read the version from internal/version/version.go."
+            exit 1
+          fi
+
+          base="origin/${{ github.base_ref }}"
+          if ! git cat-file -e "$base:internal/version/version.go" 2>/dev/null; then
+            echo "internal/version/version.go is new on this branch; introducing it at $new."
+            exit 0
+          fi
+
+          old=$(git show "$base:internal/version/version.go" | read_version /dev/stdin)
+          if [ "$old" = "$new" ]; then
+            echo "::error::internal/version/version.go is unchanged at $old. Bump it (patch for fixes, minor for new or changed behaviour, major for a breaking change to the input, arguments or output), or add the 'no-release' label if this PR ships nothing. See CONTRIBUTING.md."
+            exit 1
+          fi
+
+          echo "Version bumped: $old -> $new"
+
+      - name: Report a skipped bump check
+        if: ${{ contains(github.event.pull_request.labels.*.name, 'no-release') }}
+        run: echo "Skipped by the 'no-release' label."

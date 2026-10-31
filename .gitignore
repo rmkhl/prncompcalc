@@ -23,3 +23,11 @@ go.work.sum
 
 # env file
 .env
+
+# Built binaries
+bin
+
+# Project-local Go toolchain, module cache and golangci-lint
+.go
+
+.claude/settings.local.json
