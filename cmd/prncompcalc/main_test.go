@@ -36,8 +36,8 @@ func TestRunReportsCompensation(t *testing.T) {
 	}
 	for _, want := range []string{
 		"Points used:   6, 3 sizes from 20.00 to 40.00 mm\n",
-		"Shrinkage:     0.99425 (95% range 0.99214 to 0.99636)\n",
-		"Model scale:   1.00578\n",
+		"Shrinkage:     99.425% (95% range 99.214% to 99.636%)\n",
+		"Model scale:   100.578%\n",
 		"Offset:        -0.0725 mm (95% range -0.1381 to -0.0069 mm)\n",
 		"Contour comp:  +0.0363 mm per side\n",
 		"Hole comp:     not measured",

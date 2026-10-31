@@ -33,8 +33,8 @@ func calculateFile(path string, warnings io.Writer) (*compensation.Report, error
 
 func writeReport(w io.Writer, r *compensation.Report) {
 	fmt.Fprintf(w, "Points used:   %d, %d sizes from %.2f to %.2f mm\n", r.PointsUsed, r.Sizes, r.MinSize, r.MaxSize)
-	fmt.Fprintf(w, "Shrinkage:     %.5f (95%% range %.5f to %.5f)\n", r.Slope, r.SlopeRange.Low, r.SlopeRange.High)
-	fmt.Fprintf(w, "Model scale:   %.5f\n", r.ScaleFactor())
+	fmt.Fprintf(w, "Shrinkage:     %.3f%% (95%% range %.3f%% to %.3f%%)\n", r.Slope*100, r.SlopeRange.Low*100, r.SlopeRange.High*100)
+	fmt.Fprintf(w, "Model scale:   %.3f%%\n", r.ScaleFactor()*100)
 	fmt.Fprintf(w, "Offset:        %+.4f mm (95%% range %+.4f to %+.4f mm)\n", r.Intercept, r.InterceptRange.Low, r.InterceptRange.High)
 	fmt.Fprintf(w, "Scatter:       %.4f mm\n", r.ResidualScatter)
 	fmt.Fprintf(w, "Contour comp:  %+.4f mm per side\n", r.ContourComp)
@@ -44,7 +44,7 @@ func writeReport(w io.Writer, r *compensation.Report) {
 		fmt.Fprintln(w, "Hole comp:     not measured, add lines labelled hole")
 	}
 	for _, axis := range r.Axes {
-		fmt.Fprintf(w, "Axis %s:        shrinkage %.5f, offset %+.4f mm\n", strings.ToUpper(string(axis.Feature)), axis.Line.Slope, axis.Line.Intercept)
+		fmt.Fprintf(w, "Axis %s:        shrinkage %.3f%%, offset %+.4f mm\n", strings.ToUpper(string(axis.Feature)), axis.Line.Slope*100, axis.Line.Intercept)
 	}
 	for _, outlier := range r.Outliers {
 		fmt.Fprintf(w, "Outlier:       line %d left out, %g measured as %g is %+.3f mm from the fit\n", outlier.Line, outlier.Expected, outlier.Actual, outlier.Residual)
