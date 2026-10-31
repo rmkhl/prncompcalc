@@ -7,12 +7,19 @@ library.
 ## Project Layout
 
 ```text
-cmd/prncompcalc/       — entry point: arguments, file handling, output
+cmd/prncompcalc/       — command-line entry point: arguments, file handling, output
+cmd/prncompcalc-web/   — WebAssembly entry point, exposes the calculation to JavaScript
 internal/compensation/ — parsing, the fit and the report
+internal/webapi/       — JSON interface between the page and the calculation
 internal/version/      — the release version
+web/                   — the page: plain HTML, CSS and JavaScript, no bundler
 ```
 
 Keep `cmd/` thin: logic belongs in `internal/` where it can be tested directly.
+
+Warnings and errors are `compensation.Message` codes, not strings. A new code
+needs English text in `message.go` and Finnish and English text in
+`web/i18n.js`; a test in `internal/webapi` fails if the page is missing one.
 
 ## Build & Test
 
@@ -24,6 +31,8 @@ make all       # build bin/prncompcalc
 make test      # go test ./...
 make lint      # golangci-lint
 make fmt       # golangci-lint --fix
+make web       # build the web page to dist/web/
+make web-serve # build it and serve it on port 8000
 make ci-check  # everything CI runs, reporting both before failing
 ```
 

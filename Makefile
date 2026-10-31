@@ -1,5 +1,6 @@
 BINARY = prncompcalc
 BINDIR = bin
+WEBDIR = dist/web
 
 # Workspace-local toolchain - every go and golangci-lint invocation uses this
 # installation regardless of what is on the system. CI installs it the same way,
@@ -68,8 +69,8 @@ $(BINDIR):
 
 .PHONY: clean
 clean:
-	@rm -rf $(BINDIR)
-	@echo "✓ Cleaned Go binaries"
+	@rm -rf $(BINDIR) dist
+	@echo "✓ Cleaned build output"
 
 # The module cache is read-only by design, so it has to be made writable first.
 .PHONY: distclean
@@ -78,6 +79,22 @@ distclean: clean
 	@rm -rf .go
 	@echo "✓ Removed local Go toolchain and caches"
 
+# The web page is plain files: no bundler, and the server only has to serve them.
+# wasm_exec.js is the loader that belongs to this exact Go version, so it comes
+# from the toolchain rather than being committed.
+.PHONY: web
+web: | $(GO)
+	@mkdir -p $(WEBDIR)
+	@cp web/* $(WEBDIR)/
+	@cp $(TOOLS_DIR)/lib/wasm/wasm_exec.js $(WEBDIR)/
+	@GOOS=js GOARCH=wasm $(GO) build -ldflags="-s -w" -trimpath -o $(WEBDIR)/prncompcalc.wasm ./cmd/prncompcalc-web
+	@echo "✓ Web page built to $(WEBDIR)/"
+
+.PHONY: web-serve
+web-serve: web
+	@echo "Serving http://localhost:8000/ - press Ctrl+C to stop"
+	@python3 -m http.server 8000 --directory $(WEBDIR)
+
 .PHONY: test
 test: | $(GO)
 	@$(GO) test ./...
@@ -85,6 +102,8 @@ test: | $(GO)
 .PHONY: lint
 lint: | $(GOLANGCI_LINT)
 	@$(GOLANGCI_LINT) run ./...
+	@# The WebAssembly entry point is invisible to a native run.
+	@GOOS=js GOARCH=wasm $(GOLANGCI_LINT) run ./cmd/prncompcalc-web/...
 
 # Everything CI runs, in one command, for use before pushing. Reports every
 # check rather than stopping at the first failure, then exits non-zero if any
@@ -94,6 +113,7 @@ ci-check:
 	@failed=""; \
 	$(MAKE) --no-print-directory test || failed="$$failed tests"; \
 	$(MAKE) --no-print-directory lint || failed="$$failed lint"; \
+	$(MAKE) --no-print-directory web || failed="$$failed web"; \
 	echo ""; \
 	if [ -n "$$failed" ]; then \
 		echo "✗ CI check failed:$$failed"; \
@@ -113,7 +133,9 @@ help:
 	@echo ""
 	@echo "Build Targets:"
 	@echo "  all               Clean and build bin/$(BINARY)."
-	@echo "  clean             Remove bin/."
+	@echo "  web               Build the web page to $(WEBDIR)/."
+	@echo "  web-serve         Build the web page and serve it on port 8000."
+	@echo "  clean             Remove bin/ and dist/."
 	@echo "  distclean         As 'clean', plus removes the local toolchain in .go/."
 	@echo ""
 	@echo "Checks:"

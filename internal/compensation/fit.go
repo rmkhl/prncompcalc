@@ -1,9 +1,6 @@
 package compensation
 
-import (
-	"errors"
-	"math"
-)
+import "math"
 
 // Interval is a 95% confidence interval.
 type Interval struct {
@@ -45,10 +42,10 @@ func distinctSizes(measurements []*Measurement) int {
 func fitLine(measurements []*Measurement) (Line, error) {
 	count := len(measurements)
 	if count < 3 {
-		return Line{}, errors.New("at least 3 measurements are needed")
+		return Line{}, newMessage(CodeTooFewToFit, 3)
 	}
 	if distinctSizes(measurements) < 2 {
-		return Line{}, errors.New("at least 2 different sizes are needed")
+		return Line{}, newMessage(CodeOneSize)
 	}
 
 	var sumExpected, sumActual float64

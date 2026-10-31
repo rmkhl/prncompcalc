@@ -1,10 +1,6 @@
 package compensation
 
-import (
-	"errors"
-	"fmt"
-	"math"
-)
+import "math"
 
 const (
 	// A residual beyond this many robust standard deviations is an outlier.
@@ -53,7 +49,7 @@ type Report struct {
 	HoleComp      float64
 	HolesMeasured int
 	Axes          []AxisFit
-	Warnings      []string
+	Warnings      []Message
 }
 
 // ScaleFactor is what to scale a model by to cancel the shrinkage.
@@ -127,22 +123,22 @@ func (r *Report) describeSizes(measurements []*Measurement) {
 	}
 }
 
-func (r *Report) warn(format string, args ...any) {
-	r.Warnings = append(r.Warnings, fmt.Sprintf(format, args...))
+func (r *Report) warn(code Code, args ...any) {
+	r.Warnings = append(r.Warnings, newMessage(code, args...))
 }
 
 func (r *Report) addQualityWarnings() {
 	if r.PointsUsed < recommendedPoints {
-		r.warn("only %d points used, measure at least %d", r.PointsUsed, recommendedPoints)
+		r.warn(CodeFewPoints, r.PointsUsed, recommendedPoints)
 	}
 	if r.Sizes < recommendedSizes {
-		r.warn("only %d sizes measured, %d are needed to show the error is linear", r.Sizes, recommendedSizes)
+		r.warn(CodeFewSizes, r.Sizes, recommendedSizes)
 	}
 	if uncertainty := r.SlopeRange.HalfWidth(); uncertainty > maxSlopeUncertainty {
-		r.warn("shrinkage is uncertain by ±%.2f mm per 100 mm, measure a wider range of sizes or more points", uncertainty*100)
+		r.warn(CodeUncertainShrink, uncertainty*100)
 	}
 	if r.InterceptRange.Contains(0) {
-		r.warn("the offset cannot be told apart from zero, so the contour compensation may be noise")
+		r.warn(CodeOffsetIsNoise)
 	}
 }
 
@@ -153,10 +149,10 @@ func (r *Report) addQualityWarnings() {
 func Calculate(measurements []*Measurement) (*Report, error) {
 	outer, holes := splitOuterAndHoles(measurements)
 	if len(outer) == 0 {
-		return nil, errors.New("no outer measurements to fit")
+		return nil, newMessage(CodeNoOuter)
 	}
 	if distinctSizes(outer) < 2 {
-		return nil, errors.New("at least 2 different sizes are needed, they are what separates shrinkage from offset")
+		return nil, newMessage(CodeOneSize)
 	}
 
 	kept, outliers := removeOutliers(outer)

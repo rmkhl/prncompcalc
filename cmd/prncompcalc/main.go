@@ -26,7 +26,7 @@ func calculateFile(path string, warnings io.Writer) (*compensation.Report, error
 		return nil, err
 	}
 	if len(measurements) == 0 {
-		return nil, errors.New("no valid measurements found")
+		return nil, compensation.Message{Code: compensation.CodeNoMeasurements}
 	}
 	return compensation.Calculate(measurements)
 }

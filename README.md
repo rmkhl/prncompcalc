@@ -13,6 +13,7 @@ into `.go/` inside the project, so nothing is installed on the system.
 make prepare   # install the local toolchain
 make all       # build bin/prncompcalc
 make test      # run the tests
+make web       # build the web page
 make help      # list every target
 ```
 
@@ -64,6 +65,18 @@ Axis Y:        shrinkage 99.425%, offset -0.0550 mm
 
 Check the sign convention against your slicer before entering the
 compensation values. `bin/prncompcalc -version` prints the version.
+
+## Web page
+
+The same calculation also runs as a web page, in Finnish and English. Measurements
+are typed into a table or pasted from a spreadsheet, and results update as you
+type. The page runs in the browser as WebAssembly, so it needs no server-side
+code and measurements do not leave the device.
+
+`make web` builds it to `dist/web/`, and those files are all a web server needs.
+`make web-serve` serves them on port 8000 for local testing. Opening
+`index.html` directly from disk does not work, because browsers refuse to load
+the WebAssembly that way.
 
 ## How it works
 

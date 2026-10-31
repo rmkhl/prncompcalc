@@ -47,3 +47,6 @@ jobs:
 
       - name: Run golangci-lint
         run: make lint
+
+      - name: Build the web page
+        run: make web

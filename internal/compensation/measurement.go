@@ -35,10 +35,10 @@ func parseSize(field string) (float64, error) {
 	// A decimal comma is what a Finnish keyboard or spreadsheet produces.
 	value, err := strconv.ParseFloat(strings.ReplaceAll(field, ",", "."), 64)
 	if err != nil || math.IsNaN(value) || math.IsInf(value, 0) {
-		return 0, fmt.Errorf("%q is not a number", field)
+		return 0, newMessage(CodeNotANumber, field)
 	}
 	if value <= 0 {
-		return 0, fmt.Errorf("%q is not a positive size", field)
+		return 0, newMessage(CodeNotPositive, field)
 	}
 	return value, nil
 }
@@ -48,29 +48,40 @@ func parseFeature(field string) (Feature, error) {
 	case FeatureX, FeatureY, FeatureHole:
 		return feature, nil
 	default:
-		return "", fmt.Errorf("unknown label %q, expected x, y or hole", field)
+		return "", newMessage(CodeUnknownLabel, field)
 	}
 }
 
-func parseLine(number int, fields []string) (*Measurement, error) {
-	if len(fields) != 2 && len(fields) != 3 {
-		return nil, fmt.Errorf("expected \"expected actual [x|y|hole]\", got %d fields", len(fields))
-	}
-	expected, err := parseSize(fields[0])
+// NewMeasurement validates one measurement given as text. Number is the line or
+// row it came from, which reports use to point back at it. An empty feature is
+// an outer dimension. Any error is a Message.
+func NewMeasurement(number int, expected, actual, feature string) (*Measurement, error) {
+	expectedSize, err := parseSize(expected)
 	if err != nil {
 		return nil, err
 	}
-	actual, err := parseSize(fields[1])
+	actualSize, err := parseSize(actual)
 	if err != nil {
 		return nil, err
 	}
-	feature := FeatureOuter
-	if len(fields) == 3 {
-		if feature, err = parseFeature(fields[2]); err != nil {
+	parsedFeature := FeatureOuter
+	if feature != "" {
+		if parsedFeature, err = parseFeature(feature); err != nil {
 			return nil, err
 		}
 	}
-	return &Measurement{Line: number, Expected: expected, Actual: actual, Feature: feature}, nil
+	return &Measurement{Line: number, Expected: expectedSize, Actual: actualSize, Feature: parsedFeature}, nil
+}
+
+func parseLine(number int, fields []string) (*Measurement, error) {
+	switch len(fields) {
+	case 2:
+		return NewMeasurement(number, fields[0], fields[1], "")
+	case 3:
+		return NewMeasurement(number, fields[0], fields[1], fields[2])
+	default:
+		return nil, newMessage(CodeFieldCount, len(fields))
+	}
 }
 
 // ReadMeasurements parses lines of "expected actual [x|y|hole]" from r, in any
